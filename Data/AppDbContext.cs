@@ -12,8 +12,11 @@ public class AppDbContext : DbContext
     }
     // Each DbSet = one table in MS SQL
     public DbSet<Product> Products {get; set;}
+    public DbSet<Order> Orders {get; set;}
 
-    // Optional: Fine-tue table/column config here later
+
+
+    // Optional: Fine-tune table/column config here later
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -28,5 +31,16 @@ public class AppDbContext : DbContext
         .Property(p => p.Name)
         .IsRequired()
         .HasMaxLength(200);
+
+        modelBuilder.Entity<Order>()
+        .Property(o => o.TotalAmount)
+        .HasColumnType("decimal(18, 2)");
+
+        // FK relationship: Order -> Product
+        modelBuilder.Entity<Order>()
+        .HasOne(o => o.Product)
+        .WithMany()
+        .HasForeignKey(o => o.ProductId)
+        .OnDelete(DeleteBehavior.Restrict);
     }
 }

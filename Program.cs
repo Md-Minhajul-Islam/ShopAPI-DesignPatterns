@@ -1,6 +1,7 @@
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using ShopAPI.Data;
+using ShopAPI.Factory;
 using ShopAPI.Repositories;
 using ShopAPI.Services;
 
@@ -17,10 +18,16 @@ options.UseSqlServer(Environment.GetEnvironmentVariable("DB_CONNECTION_STRING"))
 
 // Register Repository
 builder.Services.AddScoped<IProductRepositories, ProductRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
 
 // Register Service
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
+
+// Register Factory Pattern
+builder.Services.AddSingleton<IPaymentProcessorFactory, PaymentProcessorFactory>();
 
 
 builder.Services.AddOpenApi();
