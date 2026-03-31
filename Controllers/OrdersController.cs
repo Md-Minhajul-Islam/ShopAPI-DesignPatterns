@@ -39,7 +39,9 @@ namespace ShopAPI.Controllers
                 var order = await _service.PlaceOrderAsync(
                     request.ProductId,
                     request.Quantity,
-                    request.PaymentMethod
+                    request.PaymentMethod,
+                    request.DiscountType,
+                    request.CouponCode
                 );
 
                 return CreatedAtAction(nameof(GetById),
@@ -61,5 +63,7 @@ namespace ShopAPI.Controllers
 public record PlaceOrderRequest(
     int ProductId,
     int Quantity,
-    PaymentMethod PaymentMethod
+    PaymentMethod PaymentMethod,
+    DiscountType DiscountType = DiscountType.None,
+    string? CouponCode = null
 );

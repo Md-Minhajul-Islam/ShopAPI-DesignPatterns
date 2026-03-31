@@ -28,7 +28,8 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 
 // Register Factory Pattern
 builder.Services.AddSingleton<IPaymentProcessorFactory, PaymentProcessorFactory>();
-
+// Factory + Strategy
+builder.Services.AddSingleton<IDiscountStrategyFactory, DiscountStrategyFactory>();
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();

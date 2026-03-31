@@ -15,6 +15,14 @@ namespace ShopAPI.Models
         Cancelled = 3
     }
 
+    public enum DiscountType
+    {
+        None = 0,
+        Seasonal = 1,
+        Loyalty = 2,
+        Coupon = 3
+    }
+
     public class Order
     {
         public int Id {get; set;}
@@ -22,7 +30,10 @@ namespace ShopAPI.Models
         public Product? Product {get; set;}  // Navigation property -> EF Core join
         public int Quantity {get; set;}
         public decimal TotalAmount {get; set;}
+        public decimal DiscountedAmount {get; set;}
+        public string? DiscountNote {get; set;}
         public PaymentMethod PaymentMethod {get; set;} // Factory reads this
+        public DiscountType DiscountType {get; set;} = DiscountType.None;
         public OrderStatus Status {get; set;} = OrderStatus.Pending;
         public string? PaymentNote {get; set;} // Factory writes result here
         public DateTime CreatedAt {get; set;} = DateTime.UtcNow;

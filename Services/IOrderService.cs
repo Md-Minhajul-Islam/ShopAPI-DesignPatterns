@@ -6,6 +6,12 @@ namespace ShopAPI.Services
     {
         Task<IEnumerable<Order>> GetAllOrdersAsync();
         Task<Order?> GetOrderByIdAsync(int id);
-        Task<Order> PlaceOrderAsync(int productId, int quantity, PaymentMethod paymentMethod);
+        Task<Order> PlaceOrderAsync(
+            int productId, 
+            int quantity, 
+            PaymentMethod paymentMethod,
+            DiscountType discountType = DiscountType.None,
+            string? couponCode = null
+            );
     }
 }

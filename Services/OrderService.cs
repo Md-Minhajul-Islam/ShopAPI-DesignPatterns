@@ -3,6 +3,7 @@ using ShopAPI.Exceptions;
 using ShopAPI.Factory;
 using ShopAPI.Models;
 using ShopAPI.Repositories;
+using ShopAPI.Strategy;
 
 namespace ShopAPI.Services
 {
@@ -11,13 +12,19 @@ namespace ShopAPI.Services
 
         private readonly IOrderRepository _orderRepo;
         private readonly IProductRepositories _productRepo;
-        private readonly IPaymentProcessorFactory _factory;
+        private readonly IPaymentProcessorFactory _paymentFactory;
+        private readonly IDiscountStrategyFactory _discountFactory;
 
-        public OrderService(IOrderRepository orderRepo, IProductRepositories productRepo, IPaymentProcessorFactory factory)
+        public OrderService(
+            IOrderRepository orderRepo, 
+            IProductRepositories productRepo, 
+            IPaymentProcessorFactory paymentFactory,
+            IDiscountStrategyFactory discountFactory)
         {
             _orderRepo = orderRepo;
             _productRepo = productRepo; 
-            _factory = factory;
+            _paymentFactory = paymentFactory;
+            _discountFactory = discountFactory;
         }
 
 
@@ -28,27 +35,52 @@ namespace ShopAPI.Services
         public async Task<Order?> GetOrderByIdAsync(int id)
             => await  _orderRepo.GetByIdAsync(id);
 
-        public async Task<Order> PlaceOrderAsync(int productId, int quantity, PaymentMethod paymentMethod)
+        public async Task<Order> PlaceOrderAsync(
+            int productId, 
+            int quantity, 
+            PaymentMethod paymentMethod,
+            DiscountType discountType = DiscountType.None,
+            string? couponCode = null
+            )
         {
-            var product = await _productRepo.GetByIdAsync(productId) ?? throw new NotFoundException($"Product with ID {productId} not found");
+            var product = await _productRepo.GetByIdAsync(productId) 
+                ?? throw new NotFoundException($"Product with ID {productId} not found");
 
             if(product.Stock < quantity)
                 throw new ValidationException($"Not enough stock. Available: {product.Stock}, Requested: {quantity}");
             
             var totalAmount = product.Price * quantity;
 
+            // Strategy Pattern
+            IDiscountStrategy strategy = _discountFactory.Create(discountType, couponCode);
+
+            var context = new DiscountContext();
+
+            context.SetStrategy(strategy); // inject strategy into context
+
+            // apply the discount - context doesn't know which strategy
+            var discountedAmount = context.ApplyDiscount(totalAmount);
+            var discountNote = context.GetDiscountDescription(totalAmount, discountedAmount);
+
+
             var order = new Order
             {
                 ProductId     = productId,
                 Quantity      = quantity,
                 TotalAmount   = totalAmount,
+                DiscountedAmount = discountedAmount,
+                DiscountNote = discountNote,
+                DiscountType = discountType,
                 PaymentMethod = paymentMethod,
                 Status        = OrderStatus.Pending
             };
 
-            IPaymentProcessor processor = _factory.Create(paymentMethod);
+            // Factory Pattern
+            IPaymentProcessor processor = _paymentFactory.Create(paymentMethod);
 
             bool paymentSuccess = await processor.ProcessAsync(order);
+
+            if(!paymentSuccess) throw new ValidationException("Payment processing failed");
 
             product.Stock -= quantity;
             await _productRepo.UpdateAsync(product);
