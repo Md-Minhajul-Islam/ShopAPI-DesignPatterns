@@ -1,3 +1,4 @@
+using ShopAPI.Decorator;
 using ShopAPI.Repositories;
 
 namespace ShopAPI.Extensions
@@ -8,7 +9,20 @@ namespace ShopAPI.Extensions
             this IServiceCollection services
         )
         {
-            services.AddScoped<IProductRepositories, ProductRepository>();
+            // Product Repository with Decorator
+            // Step 1: Register the REAL repository with a name
+            //         - Concrete class - not the interface
+            services.AddScoped<ProductRepository>();
+
+            // Step 2: Register the INTERFACE → Decorator
+            // When IProductRepository is requested → give LoggingProductRepository
+            // LoggingProductRepository wraps ProductRepository inside
+            services.AddScoped<IProductRepositories>(provider => 
+                new LoggingProductRepository(provider.GetRequiredService<ProductRepository>(),
+                provider.GetRequiredService<ILogger<LoggingProductRepository>>()    
+            ));       
+            
+            // Order Repository without Decorator
             services.AddScoped<IOrderRepository, OrderRepository>();
 
             return services;
