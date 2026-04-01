@@ -3,6 +3,7 @@ using ShopAPI.Exceptions;
 using ShopAPI.Factory;
 using ShopAPI.Models;
 using ShopAPI.Repositories;
+using ShopAPI.Singleton;
 using ShopAPI.Strategy;
 
 namespace ShopAPI.Services
@@ -14,17 +15,20 @@ namespace ShopAPI.Services
         private readonly IProductRepositories _productRepo;
         private readonly IPaymentProcessorFactory _paymentFactory;
         private readonly IDiscountStrategyFactory _discountFactory;
-
+        private readonly IAppConfigService _config;
         public OrderService(
             IOrderRepository orderRepo, 
             IProductRepositories productRepo, 
             IPaymentProcessorFactory paymentFactory,
-            IDiscountStrategyFactory discountFactory)
+            IDiscountStrategyFactory discountFactory,
+            IAppConfigService config
+        )
         {
             _orderRepo = orderRepo;
             _productRepo = productRepo; 
             _paymentFactory = paymentFactory;
             _discountFactory = discountFactory;
+            _config = config;
         }
 
 
@@ -46,9 +50,22 @@ namespace ShopAPI.Services
             var product = await _productRepo.GetByIdAsync(productId) 
                 ?? throw new NotFoundException($"Product with ID {productId} not found");
 
+
+            // NEW: use singleton config for validation
+            if(!_config.IsOrderQuantityValid(quantity))
+                throw new ValidationException(
+                $"Quantity must be between 1 and " +
+                $"{_config.Config.MaxOrderQuantity}");
+
             if(product.Stock < quantity)
                 throw new ValidationException($"Not enough stock. Available: {product.Stock}, Requested: {quantity}");
             
+            // NEW: low stock warning in response
+            var remainingStock = product.Stock - quantity;
+            if(_config.IsLowStock(remainingStock))
+                Console.WriteLine($"⚠️ Low stock warning: " +
+                              $"{product.Name} has {remainingStock} left!");
+
             var totalAmount = product.Price * quantity;
 
             // Strategy Pattern

@@ -1,16 +1,22 @@
 using ShopAPI.Exceptions;
 using ShopAPI.Models;
 using ShopAPI.Repositories;
+using ShopAPI.Singleton;
 
 namespace ShopAPI.Services;
 
 public class ProductService : IProductService
 {
     private readonly IProductRepositories _repo;
+    private readonly IAppConfigService _config;
 
-    public ProductService(IProductRepositories repo)
+    public ProductService(
+        IProductRepositories repo,
+        IAppConfigService config
+    )
     {
         _repo = repo;
+        _config = config;
     }
 
     // READ OPERATIONS
@@ -48,7 +54,15 @@ public class ProductService : IProductService
     // WRITE OPERATIONS
     public async Task AddProductAsync(Product product)
     {
+        // OLD validation
         ValidateProduct(product);
+
+        // New: use singleton config for validatoin
+        if(!_config.IsProductPriceValid(product.Price))
+            throw new ValidationException(
+                    $"Price must be between " +
+                    $"{_config.Config.MinProductPrice:C} and " +
+                    $"{_config.Config.MaxProductPrice:C}");
 
         var existing = await _repo.GetAllAsync();
         bool nameExists = existing.Any(p => p.Name.Equals(product.Name, StringComparison.OrdinalIgnoreCase));
@@ -93,8 +107,8 @@ public class ProductService : IProductService
         if(product.Name.Length < 3)
             throw new ValidationException("Product name must be at least 3 characters.");
         
-        if(product.Price <= 0)
-            throw new ValidationException("Price must be greater than zero.");
+        // if(product.Price <= 0)
+        //     throw new ValidationException("Price must be greater than zero.");
         
         if(product.Stock < 0)
             throw new ValidationException("Stock cannot be negative.");

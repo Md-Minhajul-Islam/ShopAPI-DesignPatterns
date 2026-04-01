@@ -4,6 +4,7 @@ using ShopAPI.Data;
 using ShopAPI.Factory;
 using ShopAPI.Repositories;
 using ShopAPI.Services;
+using ShopAPI.Singleton;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +31,14 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddSingleton<IPaymentProcessorFactory, PaymentProcessorFactory>();
 // Factory + Strategy
 builder.Services.AddSingleton<IDiscountStrategyFactory, DiscountStrategyFactory>();
+
+// Singleton Pattern
+// WAY 2: DI singleton
+builder.Services.AddSingleton<IAppConfigService, AppConfigService>();
+
+
+
+
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
