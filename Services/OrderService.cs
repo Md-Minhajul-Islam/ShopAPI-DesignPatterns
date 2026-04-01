@@ -2,6 +2,7 @@ using System.Diagnostics;
 using ShopAPI.Exceptions;
 using ShopAPI.Factory;
 using ShopAPI.Models;
+using ShopAPI.Observer;
 using ShopAPI.Repositories;
 using ShopAPI.Singleton;
 using ShopAPI.Strategy;
@@ -16,12 +17,14 @@ namespace ShopAPI.Services
         private readonly IPaymentProcessorFactory _paymentFactory;
         private readonly IDiscountStrategyFactory _discountFactory;
         private readonly IAppConfigService _config;
+        private readonly IOrderEventPublisher _publisher; 
         public OrderService(
             IOrderRepository orderRepo, 
             IProductRepositories productRepo, 
             IPaymentProcessorFactory paymentFactory,
             IDiscountStrategyFactory discountFactory,
-            IAppConfigService config
+            IAppConfigService config,
+            IOrderEventPublisher publisher
         )
         {
             _orderRepo = orderRepo;
@@ -29,6 +32,7 @@ namespace ShopAPI.Services
             _paymentFactory = paymentFactory;
             _discountFactory = discountFactory;
             _config = config;
+            _publisher = publisher;
         }
 
 
@@ -63,7 +67,7 @@ namespace ShopAPI.Services
             // NEW: low stock warning in response
             var remainingStock = product.Stock - quantity;
             if(_config.IsLowStock(remainingStock))
-                Console.WriteLine($"⚠️ Low stock warning: " +
+                Console.WriteLine($"Low stock warning: " +
                               $"{product.Name} has {remainingStock} left!");
 
             var totalAmount = product.Price * quantity;
@@ -103,6 +107,10 @@ namespace ShopAPI.Services
             await _productRepo.UpdateAsync(product);
 
             await _orderRepo.AddAsync(order);
+
+            // Observer Pattern
+            var orderEvent = new OrderPlacedEvent(order);
+            await _publisher.NotifyAsync(orderEvent);
 
             return order;
         }

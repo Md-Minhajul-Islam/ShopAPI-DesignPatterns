@@ -2,27 +2,26 @@ namespace ShopAPI.Singleton
 {
     public class AppConfigService : IAppConfigService
     {
-        // WAY 1:  Classic Singleton
-        private static AppConfigService? _instance;
-        private static readonly object _lock = new object();
+        // // WAY 1:  Classic Singleton
+        // private static AppConfigService? _instance;
+        // private static readonly object _lock = new object();
 
-        public static AppConfigService Instance
-        {
-            get
-            {
-                if(_instance == null)
-                {
-                    // Thread safe - prevents two threads
-                    // creating two instances simultaneously
-                    lock (_lock)
-                    {
-                        _instance ??= new AppConfigService();
-                    }
-                }
-                return _instance;
-            }
-        }
-
+        // public static AppConfigService Instance
+        // {
+        //     get
+        //     {
+        //         if(_instance == null)
+        //         {
+        //             // Thread safe - prevents two threads
+        //             // creating two instances simultaneously
+        //             lock (_lock)
+        //             {
+        //                 _instance ??= new AppConfigService();
+        //             }
+        //         }
+        //         return _instance;
+        //     }
+        // }
 
         // Configuration
         public AppConfiguration Config {get; private set;}

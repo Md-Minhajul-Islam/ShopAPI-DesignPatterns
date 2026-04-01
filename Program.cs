@@ -1,6 +1,7 @@
 using DotNetEnv;
 using Microsoft.EntityFrameworkCore;
 using ShopAPI.Data;
+using ShopAPI.Extensions;
 using ShopAPI.Factory;
 using ShopAPI.Repositories;
 using ShopAPI.Services;
@@ -17,35 +18,30 @@ Env.Load();
 builder.Services.AddDbContext<AppDbContext>(options => 
 options.UseSqlServer(Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")));
 
+// Patterns
+
 // Register Repository
-builder.Services.AddScoped<IProductRepositories, ProductRepository>();
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-
-
+builder.Services.AddRepositories();
 // Register Service
-builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddServices();
+// Singleton
+builder.Services.AddAppConfiguration();
+// Factory
+builder.Services.AddFactories();
+// Observer
+builder.Services.AddObservers();
 
 
-// Register Factory Pattern
-builder.Services.AddSingleton<IPaymentProcessorFactory, PaymentProcessorFactory>();
-// Factory + Strategy
-builder.Services.AddSingleton<IDiscountStrategyFactory, DiscountStrategyFactory>();
-
-// Singleton Pattern
-// WAY 2: DI singleton
-builder.Services.AddSingleton<IAppConfigService, AppConfigService>();
-
-
-
-
-
+// API
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 
 var app = builder.Build();
+
+// Subscribe observers
+app.SubscribeObservers();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
