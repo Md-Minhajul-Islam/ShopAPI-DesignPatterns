@@ -30,6 +30,8 @@ builder.Services.AddAppConfiguration();
 builder.Services.AddFactories();
 // Observer
 builder.Services.AddObservers();
+// Adapter
+builder.Services.AddAdapters();
 
 
 // API

@@ -11,7 +11,8 @@ namespace ShopAPI.Services
             int quantity, 
             PaymentMethod paymentMethod,
             DiscountType discountType = DiscountType.None,
-            string? couponCode = null
-            );
+            string? couponCode = null,
+            string address = "Dhaka, Bangladesh"
+        );
     }
 }

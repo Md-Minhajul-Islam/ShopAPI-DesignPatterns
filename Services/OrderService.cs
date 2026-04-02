@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using ShopAPI.Adapter;
 using ShopAPI.Exceptions;
 using ShopAPI.Factory;
 using ShopAPI.Models;
@@ -18,13 +19,17 @@ namespace ShopAPI.Services
         private readonly IDiscountStrategyFactory _discountFactory;
         private readonly IAppConfigService _config;
         private readonly IOrderEventPublisher _publisher; 
+        private readonly IShippingService _shipping; // NEW
+        
+        
         public OrderService(
             IOrderRepository orderRepo, 
             IProductRepositories productRepo, 
             IPaymentProcessorFactory paymentFactory,
             IDiscountStrategyFactory discountFactory,
             IAppConfigService config,
-            IOrderEventPublisher publisher
+            IOrderEventPublisher publisher,
+            IShippingService shipping
         )
         {
             _orderRepo = orderRepo;
@@ -33,6 +38,7 @@ namespace ShopAPI.Services
             _discountFactory = discountFactory;
             _config = config;
             _publisher = publisher;
+            _shipping = shipping;
         }
 
 
@@ -48,8 +54,9 @@ namespace ShopAPI.Services
             int quantity, 
             PaymentMethod paymentMethod,
             DiscountType discountType = DiscountType.None,
-            string? couponCode = null
-            )
+            string? couponCode = null,
+            string address = "Dhaka, Bangladesh" // NEW
+        )
         {
             var product = await _productRepo.GetByIdAsync(productId) 
                 ?? throw new NotFoundException($"Product with ID {productId} not found");
@@ -106,7 +113,23 @@ namespace ShopAPI.Services
             product.Stock -= quantity;
             await _productRepo.UpdateAsync(product);
 
+            // Ship order via adapter
+            var shippingCost = await _shipping
+                .GetShippingCostAsync(productId, quantity);
+
+            var shippingResult = await _shipping
+                .ShipOrderAsync(productId, quantity, address);
+
+            if (shippingResult.Success)
+            {
+                order.TrackingCode      = shippingResult.TrackingCode;
+                order.ShippingCost      = shippingCost;
+                order.ShippingStatus    = "In Transit";
+                order.EstimatedDelivery = shippingResult.EstimateDelivery ;
+            }
+
             await _orderRepo.AddAsync(order);
+
 
             // Observer Pattern
             var orderEvent = new OrderPlacedEvent(order);

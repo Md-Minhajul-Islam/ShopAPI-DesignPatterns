@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ShopAPI.Adapter;
 using ShopAPI.Exceptions;
 using ShopAPI.Models;
 using ShopAPI.Services;
@@ -10,10 +11,15 @@ namespace ShopAPI.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _service;
+        private readonly IShippingService _shipping;
 
-        public OrdersController(IOrderService service)
+        public OrdersController(
+            IOrderService service,
+            IShippingService shipping
+        )
         {
             _service = service;
+            _shipping = shipping;
         }
 
         [HttpGet]
@@ -55,6 +61,13 @@ namespace ShopAPI.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [HttpGet("{trackingCode}/track")]
+        public async Task<IActionResult> TrackShipment(string trackingCode)
+        {
+            var status = await _shipping.TrackShipmentAsync(trackingCode);
+            return Ok(new {trackingCode, status});
         }
     }
 }

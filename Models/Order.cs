@@ -36,6 +36,14 @@ namespace ShopAPI.Models
         public DiscountType DiscountType {get; set;} = DiscountType.None;
         public OrderStatus Status {get; set;} = OrderStatus.Pending;
         public string? PaymentNote {get; set;} // Factory writes result here
+        
+        // NEW: Shipping fields
+        public string? TrackingCode { get; set; }  
+        public decimal ShippingCost { get; set; }        
+        public string? ShippingStatus { get; set; }     
+        public DateTime? EstimatedDelivery { get; set; } 
+        
+        
         public DateTime CreatedAt {get; set;} = DateTime.UtcNow;
 
     }
